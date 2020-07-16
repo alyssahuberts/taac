@@ -54,7 +54,8 @@ setwd("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="BULUGANYA"] <- "Buluganya"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="BUNYAFWA"] <- "Bunyafa"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="CAWENTE"] <- "Chawente"
-  walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="TORORO"] <- "Eastern Division (Tororo)"
+  walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="TORORO" & walkthrough_incumbents$incumbents_scid == 039-214-001] <- "Eastern Division (Tororo)"
+  walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="TORORO" & walkthrough_incumbents$incumbents_scid == 039-214-002] <- "Western Division (Tororo)"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="KAPCHORWA"] <- "Kapchorwa TC"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="KARENGA(NAPOR"] <- "Karenga"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="KOCH-GOMA"] <- "Kochgoma"
@@ -142,5 +143,13 @@ setwd("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/
   
   walkthrough <- left_join(walkthrough_taac_survey, walkthrough_cands16, by = "taac_survey_subcounty")
   walkthrough <- left_join(walkthrough, walkthrough_incumbents, by = "taac_survey_subcounty")
+  
+  # fix district id's that are missing
+  walkthrough$cands_16_district_id[walkthrough$taac_survey_district=="Kapchorwa"] <- "014"
+  walkthrough$cands_16_scid[walkthrough$taac_survey_subcounty=="Kapchorwa TC"] <- "014-000-000"
+  
+  walkthrough$cands_16_district_id[walkthrough$taac_survey_district=="Koboko"] <- "066"
+  walkthrough$cands_16_scid[walkthrough$taac_survey_subcounty=="Koboko TC"] <- "066-000-000"
+  
   save(walkthrough,file = "/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/walkthrough.Rdata")
   
