@@ -55,21 +55,32 @@
     # write a  function to, for each observation in the survey, either pick the
     # best match within the subcounty/district, or say we can't identify the candidate
     # named
-    all_matches <- tibble(resp_id = numeric(), polit_lc3_vote_name = character(), match_lc3_bound = character(), match_lc3_best = character(), match_lc3_best_dist = numeric(),all_options_lc3 = character(),
-                          polit_lc5_vote_name = character(), match_lc5_bound = character(), match_lc5_best = character(), match_lc5_best_dist = numeric(), all_options_lc5 = character())
+    all_matches <- tibble(resp_id = numeric(), polit_lc3_vote_name = character(), m_jw = character(), d_jw = numeric(), 
+                          m_dl = character(), d_dl = numeric(), m_lcs = character(), d_lcs = numeric(), m_jc = character(), d_jc = numeric(),
+                          all_options = character())
     check_match <- function(resp_id= 67707){
       # lc3
         if(taac_survey[taac_survey$resp_id == resp_id, "cands_16_scid"] %in% cands_16$cands_16_scid){
       targets_lc3 <- cands_16[(cands_16$cands_16_scid == as.character(taac_survey[taac_survey$resp_id == resp_id, "cands_16_scid"])&(cands_16$position == "LC3 Chairperson")),]
       matches <- tibble(resp_id = resp_id)
       matches$polit_lc3_vote_name <- taac_survey[taac_survey$resp_id == resp_id, "polit_lc3_vote_name"] %>% pull()
-      matches$match_lc3_bound <- targets_lc3[amatch(taac_survey[taac_survey$resp_id == resp_id, "polit_lc3_vote_name"], targets_lc3$candidate_full_name, method = "jw", maxDist = .3),"candidate_full_name"]
-      matches$match_lc3_best <- targets_lc3[amatch(taac_survey[taac_survey$resp_id == resp_id, "polit_lc3_vote_name"], targets_lc3$candidate_full_name, method = "jw", maxDist = 1),"candidate_full_name"]
-      matches$match_lc3_best_dist <- min(stringdist(taac_survey[taac_survey$resp_id == resp_id, "polit_lc3_vote_name"], targets_lc3$candidate_full_name, method = "jw"),na.rm=TRUE)
-      matches$all_options_lc3 <- paste(targets_lc3$candidate_full_name, collapse = ", ")
+      # jw 
+        matches$m_jw <- targets_lc3[amatch(matches$polit_lc3_vote_name, targets_lc3$candidate_full_name, method = "jw", maxDist = 1),"candidate_full_name"]
+        matches$d_jw <- stringdist(matches$polit_lc3_vote_name, matches$m_jw, method = "jw")
+      # dl 
+        matches$m_dl <- targets_lc3[amatch(matches$polit_lc3_vote_name, targets_lc3$candidate_full_name, method = "dl",maxDist = 20),"candidate_full_name"]
+        matches$d_dl <- stringdist(matches$polit_lc3_vote_name, matches$m_jw, method = "dl")
+      # lcs 
+        matches$m_lcs <- targets_lc3[amatch(matches$polit_lc3_vote_name, targets_lc3$candidate_full_name, method = "lcs",maxDist = 20),"candidate_full_name"]
+        matches$d_lcs <- stringdist(matches$polit_lc3_vote_name, matches$m_jw, method = "lcs")
+      # jaccard
+        matches$m_jc <- targets_lc3[amatch(matches$polit_lc3_vote_name, targets_lc3$candidate_full_name, method = "jaccard",maxDist = 1),"candidate_full_name"]
+        matches$d_jc <- stringdist(matches$polit_lc3_vote_name, matches$m_jw, method = "jaccard")
+        matches$all_options_lc3 <- paste(targets_lc3$candidate_full_name, collapse = ", ")
         }else{
-      matches <- tibble(resp_id = resp_id,  polit_lc3_vote_name =NA,
-       match_lc3_bound = NA, match_lc3_best = NA, match_lc3_best_dist = NA, all_options_lc3= NA)
+      matches <- tibble(resp_id = numeric(), polit_lc3_vote_name = character(), m_jw = character(), d_jw = numeric(), 
+                                m_dl = character(), d_dl = numeric(), m_lcs = character(), d_lcs = numeric(), m_jc = character(), d_jc = numeric(),
+                                all_options = character())
       }
       # lc5
       if(taac_survey[taac_survey$resp_id == resp_id, "cands_16_district_id"]  %in% cands_16$cands_16_district_id){
