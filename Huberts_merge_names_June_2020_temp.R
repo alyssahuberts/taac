@@ -5,6 +5,7 @@
   library(stringr)
   library(janitor)
   library(haven)
+  library(tidyverse)
   setwd("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/")
   
   # Date created: 6/29/2020
@@ -31,8 +32,15 @@
   # work off the survey responses, which are the relevant subcounties for our purposes 
     # read in taac survey
     taac_survey <- read_dta("/Users/alyssahuberts/Dropbox/TAAC Scorecard/4 Data Analysis/2_data/1_rawdata/TAAC_final.dta") %>% 
-      select(resp_id, DataSource_Endline, district, subcounty, polit_lc3_vote, polit_lc3_vote_conf, polit_lc3_vote_name, polit_lc5_vote, polit_lc5_vote_conf, polit_lc5_vote_name,polit_lc5_vote_name_u, polit_lc5_vote_full_name) %>% 
+      select(resp_id, DataSource_Endline, district, subcounty, polit_lc3_vote, polit_lc3_vote_conf, polit_lc3_vote_name, polit_lc5_vote, polit_lc5_vote_conf, polit_lc5_vote_name,polit_lc5_vote_name_u, polit_lc5_vote_full_name, sc_treat, region4) %>% 
     filter(DataSource_Endline ==1)
+   taac_survey <-  taac_survey %>% filter(is.na(region4)| region4==0)
+   taac_survey <-  taac_survey %>% filter(!is.na(sc_treat))
+   taac_survey <- taac_survey %>% filter(district!= "Nakapiripirit"& 
+                                           district!= "Napak"&
+                                           district!= "Moroto" & 
+                                           district != "Kotido" & 
+                                           district!= "Kaabong")
     
     # load in the walkthrough so that we know we have the identifier for each subcounty across the three relevant datasets
     load("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/walkthrough.Rdata")
@@ -70,7 +78,7 @@
     # named
     all_matches <- tibble(resp_id = numeric(), polit_lc3_vote_name = character(), m_jw_3 = character(), d_jw_3 = numeric(), 
                           m_dl_3 = character(), d_dl_3 = numeric(), m_lcs_3 = character(), d_lcs_3 = numeric(), m_jc_3 = character(), d_jc_3 = numeric(),
-                          all_options_3 = character(),
+                          all_options_3 = character(), polit_lc5_vote_name = character(),
                           m_jw_5 = character(), d_jw_5 = numeric(), 
                           m_dl_5 = character(), d_dl_5 = numeric(), m_lcs_5 = character(), d_lcs_5 = numeric(), m_jc_5 = character(), d_jc_5 = numeric(),
                           all_options_5 = character())
@@ -118,9 +126,19 @@
         matches$m_jc_5 <- targets_lc5[amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "jaccard",maxDist = 1),"candidate_full_name"]
         matches$d_jc_5 <- stringdist(matches$polit_lc5_vote_name, matches$m_lcs_5, method = "jaccard")
         matches$all_options_5 <- paste(targets_lc5$candidate_full_name, collapse = ", ")
+        all_matches <<- rbind(all_matches,matches)
         }
     lapply(taac_survey$resp_id,check_match)
     
+    # From here, we have matches, but we don't have a summary measure of how
+    # good they are. How to pick the best match? We could go back and do it
+    # manually, but for now I'm going to impose the following rules:
+      # If jw < .3, use that match. if not, 
+        # if dl < 7, use that match. If not, 
+          # if jc < .3, use that match
+    all_matches$match_id <- ifelse(all_matches$d_jw_3 <.3, all_matches$m_jw_3,NA) 
+    all_matches$match_id <- ifelse(is.na(all_matches$match_id) & all_matches$d_dl_3 <6, all_matches$m_dl_3,all_matches$match_id) 
+    all_matches$match_id <- ifelse(is.na(all_matches$match_id) & all_matches$d_jc_3 <.3, all_matches$m_jc_3,all_matches$match_id) 
     
     # Merge responses back onto TAAC 
     taac_survey <- left_join(taac_survey, all_matches[c("resp_id", "match_lc3_bound", "match_lc5_bound")], by ="resp_id")
