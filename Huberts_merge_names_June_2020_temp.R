@@ -116,7 +116,7 @@
         matches$polit_lc5_vote_name <- taac_survey[taac_survey$resp_id == resp_id, "polit_lc5_vote_name"] %>% pull()
         # jw 
         matches$m_jw_5 <- targets_lc5[amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "jw", maxDist = 1),"candidate_full_name"]
-        matches$d_jw_5 <- stringdist(matches$polit_lc5_vote_name, matches$m_jw_3, method = "jw")
+        matches$d_jw_5 <- stringdist(matches$polit_lc5_vote_name, matches$m_jw_5, method = "jw")
         # dl 
         matches$m_dl_5 <- targets_lc5[amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "dl",maxDist = 20),"candidate_full_name"]
         matches$d_dl_5 <- stringdist(matches$polit_lc5_vote_name, matches$m_dl_5, method = "dl")
@@ -202,7 +202,7 @@
      all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "umony kon"), "omwony constantine", all_matches$match_id_3)
      
     # Same thing for LC5
-     all_matches$match_id_5 <- ifelse(all_matches$polit_lc5_vote_name != ""& all_matches$d_jw_3 <.3, all_matches$m_jw_3,NA) 
+     all_matches$match_id_5 <- ifelse(all_matches$polit_lc5_vote_name != ""& all_matches$d_jw_5 <.3, all_matches$m_jw_5,NA) 
      all_matches$match_id_5 <- ifelse(is.na(all_matches$match_id_5) & all_matches$polit_lc5_vote_name != ""& all_matches$d_lcs_5 <11, all_matches$m_dl_5,all_matches$match_id_5) 
      all_matches$match_id_5 <- ifelse(all_matches$polit_lc5_vote_name != ""& is.na(all_matches$match_id_5) & all_matches$d_dl_5 <6, all_matches$m_dl_5,all_matches$match_id_5) 
      all_matches$match_id_5 <- ifelse(all_matches$polit_lc5_vote_name != ""& is.na(all_matches$match_id_5) & all_matches$d_jc_5 <.3, all_matches$m_jc_5,all_matches$match_id_5) 
@@ -286,7 +286,7 @@
                           all_options_5 = character())
     check_mismatch <- function(resp_id= 67707){
       # lc3: did they name an lc5 from their district as their lc3 choice?
-        targets_lc5 <- cands_16[cands_16$cands_16_district_id == as.character(taac_survey[taac_survey$resp_id == resp_id, "cands_16_district_id"]),]
+        targets_lc5 <- cands_16[cands_16$cands_16_district_id == as.character(taac_survey[taac_survey$resp_id == resp_id, "cands_16_district_id"])& cands_16$position == "LC5 Chairperson",]
         if(length(targets_lc5$candidate_full_name) ==0){
           targets_lc5 <- tibble(candidate_full_name = NA)
         }
@@ -307,8 +307,10 @@
         mismatches$d_jc_5 <- stringdist(mismatches$polit_lc3_vote_name, mismatches$m_jc_5, method = "jaccard")
         mismatches$all_options_5 <- paste(targets_lc5$candidate_full_name, collapse = ", ")
       
-      # lc5: did they name an lc3 from their subcounty as their lc5 choice?
-        targets_lc3 <- cands_16[cands_16$cands_16_scid == as.character(taac_survey[taac_survey$resp_id == resp_id, "cands_16_scid"]),]
+      # lc5: did they name an lc3 from their district (note that we have to use
+      # district because LC5 candidates don't have a subcounty associated) as
+      # their lc5 choice?
+        targets_lc3 <- cands_16[cands_16$cands_16_district_id == as.character(taac_survey[taac_survey$resp_id == resp_id, "cands_16_district_id"])  & cands_16$position == "LC3 Chairperson",]
         if(length(targets_lc3$candidate_full_name) ==0){
           targets_lc3 <- tibble(candidate_full_name = NA)
         }
@@ -320,10 +322,10 @@
         mismatches$m_dl_3 <- targets_lc5[amatch(mismatches$polit_lc5_vote_name, targets_lc3$candidate_full_name, method = "dl",maxDist = 20),"candidate_full_name"]
         mismatches$d_dl_3 <- stringdist(mismatches$polit_lc5_vote_name, mismatches$m_dl_3, method = "dl")
         # lcs 
-        mismatches$m_lcs_3 <- targets_lc3[amatch(mismatches$polit_lc5_vote_name, targets_lc3$candidate_full_name, method = "lcs",maxDist = 20),"candidate_full_name"]
+        mismatches$m_lcs_3 <- targets_lc5[amatch(mismatches$polit_lc5_vote_name, targets_lc3$candidate_full_name, method = "lcs",maxDist = 20),"candidate_full_name"]
         mismatches$d_lcs_3 <- stringdist(mismatches$polit_lc5_vote_name, mismatches$m_lcs_3, method = "lcs")
         # jaccard
-        mismatches$m_jc_3 <- targets_lc3[amatch(mismatches$polit_lc5_vote_name, targets_lc3$candidate_full_name, method = "jaccard",maxDist = 1),"candidate_full_name"]
+        mismatches$m_jc_3 <- targets_lc5[amatch(mismatches$polit_lc5_vote_name, targets_lc3$candidate_full_name, method = "jaccard",maxDist = 1),"candidate_full_name"]
         mismatches$d_jc_3 <- stringdist(mismatches$polit_lc5_vote_name, mismatches$m_jc_3, method = "jaccard")
         mismatches$all_options_3 <- paste(targets_lc3$candidate_full_name, collapse = ", ")
       all_mismatches <<- bind_rows(all_mismatches, mismatches)
@@ -332,29 +334,41 @@
     
     # assign a mismatch id 
       # Note that we use rules that are twice as stringent here
-    all_mismatches$match_id_3 <- ifelse(all_mismatches$polit_lc3_vote_name != ""& all_mismatches$d_jw_3 <.15, all_mismatches$m_jw_3,NA) 
+    all_mismatches$mismatch_id_3 <- ifelse(all_mismatches$polit_lc3_vote_name != ""& all_mismatches$d_jw_3 <.15, all_mismatches$m_jw_3,NA) 
     all_mismatches$mismatch_id_3 <- ifelse(is.na(all_mismatches$mismatch_id_3) & all_mismatches$polit_lc3_vote_name != ""& all_mismatches$d_lcs_3 <6, all_mismatches$m_dl_3,all_mismatches$mismatch_id_3) 
     all_mismatches$mismatch_id_3 <- ifelse(all_mismatches$polit_lc3_vote_name != ""& is.na(all_mismatches$mismatch_id_3) & all_mismatches$d_dl_3 <3, all_mismatches$m_dl_3,all_mismatches$mismatch_id_3) 
     all_mismatches$mismatch_id_3 <- ifelse(all_mismatches$polit_lc3_vote_name != ""& is.na(all_mismatches$mismatch_id_3) & all_mismatches$d_jc_3 <.15, all_mismatches$m_jc_3,all_mismatches$mismatch_id_3) 
     all_mismatches$mismatch_id_3 <- ifelse(all_mismatches$polit_lc3_vote_name != ""& is.na(all_mismatches$mismatch_id_3) & all_mismatches$d_jc_3 <.15, all_mismatches$m_jc_3,all_mismatches$mismatch_id_3) 
     
-    all_mismatches$mismatch_id_5 <- ifelse(all_mismatches$polit_lc5_vote_name != ""& all_mismatches$d_jw_3 <.15, all_mismatches$m_jw_3,NA) 
+    all_mismatches$mismatch_id_5 <- ifelse(all_mismatches$polit_lc5_vote_name != ""& all_mismatches$d_jw_5 <.15, all_mismatches$m_jw_5,NA) 
     all_mismatches$mismatch_id_5 <- ifelse(is.na(all_mismatches$mismatch_id_5) & all_mismatches$polit_lc5_vote_name != ""& all_mismatches$d_lcs_5 <6, all_mismatches$m_dl_5,all_mismatches$mismatch_id_5) 
     all_mismatches$mismatch_id_5 <- ifelse(all_mismatches$polit_lc5_vote_name != ""& is.na(all_mismatches$mismatch_id_5) & all_mismatches$d_dl_5 <3, all_mismatches$m_dl_5,all_mismatches$mismatch_id_5) 
     all_mismatches$mismatch_id_5 <- ifelse(all_mismatches$polit_lc5_vote_name != ""& is.na(all_mismatches$mismatch_id_5) & all_mismatches$d_jc_5 <.15, all_mismatches$m_jc_5,all_mismatches$mismatch_id_5) 
     all_mismatches$mismatch_id_5 <- ifelse(all_mismatches$polit_lc5_vote_name != ""& is.na(all_mismatches$mismatch_id_5) & all_mismatches$d_jc_5 <.15, all_mismatches$m_jc_5,all_mismatches$mismatch_id_5) 
     
     
-    # this is where it gets tricky. IF the peroson is missing a match for lc3,
+    # this is where it gets tricky. IF the person is missing a match for lc3,
     # and they have a mismatch, we want to fill in their lc3 match with the lc5
-    # answer they gave. Vice versa for lc 5
+    # answer they gave. Vice versa for lc 5. But note that this voids their LC5
+    # match (the candiate can't be both their LC3 and LC5 match. For now, change
+    # their candidate to "MISMATCH" and talk to Pia and Nathan about how to deal
+    # with it
     
-    complete_matches <- all_matches
+    complete_matches <- all_matches[,c("resp_id", "polit_lc3_vote_name","all_options_3", "match_id_3", "polit_lc5_vote_name", "all_options_5", "match_id_5")]
     complete_matches <- left_join(complete_matches, all_mismatches[,c("resp_id", "mismatch_id_3", "mismatch_id_5")], by = "resp_id")
-    complete_matches <- complete_matches %>% select(resp_id, polit_lc3_vote_name, polit_lc5_vote_name, match_id_3, match_id_5, mismatch_id_3, mismatch_id_5)
+    complete_matches <- complete_matches %>% select(resp_id, polit_lc3_vote_name, all_options_3,  match_id_3,mismatch_id_3, polit_lc5_vote_name,all_options_5, match_id_5,  mismatch_id_5)
+    # if they gave an LC3 name for the LC5 question,  first,mark that LC5 selection as void because of mismatch
+    complete_matches$match_corrected_5 <- ifelse(is.na(complete_matches$match_id_3) & !is.na(complete_matches$mismatch_id_3), "VOID-MISREPORT", complete_matches$match_id_5)
+    # then, put that LC3 as their candidate selection
     complete_matches$match_corrected_3 <- ifelse(is.na(complete_matches$match_id_3) & !is.na(complete_matches$mismatch_id_3), complete_matches$mismatch_id_3, complete_matches$match_id_3)
-    complete_matches$match_corrected_3 <- ifelse(is.na(complete_matches$match_id_5) & !is.na(complete_matches$mismatch_id_5), complete_matches$mismatch_id_5, complete_matches$match_id_5)
-                                                                                              
+   
+    # if they gave an LC5 name for the LC3 question,  first,mark that LC3 selection as void because of mismatch
+    complete_matches$match_corrected_3 <- ifelse(is.na(complete_matches$match_id_5) & !is.na(complete_matches$mismatch_id_5), "VOID-MISREPORT", complete_matches$match_id_3)
+    # then, put that LC3 as their candidate selection
+    complete_matches$match_corrected_5 <- ifelse(is.na(complete_matches$match_id_5) & !is.na(complete_matches$mismatch_id_5), complete_matches$mismatch_id_5, complete_matches$match_id_5)
+
+    
+    complete_matches <- complete_matches %>% select(resp_id, polit_lc3_vote_name, match_corrected_3, all_options_3, polit_lc5_vote_name, match_corrected_5, all_options_5)                                                                                          
                                                  # load in the incumbent's name 
     winners_2011_LC3 <- read.csv("election/2011_SC_Chairperson_winners.csv", stringsAsFactors = FALSE, header = TRUE) %>%
       clean_names %>%
