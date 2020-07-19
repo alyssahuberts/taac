@@ -133,7 +133,7 @@ setwd("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/
   walkthrough_cands16$taac_survey_subcounty[walkthrough_cands16$cands_16_scounty_name=="SISIYI" ] <- "Simu/Sisiyi"
   walkthrough_cands16$taac_survey_subcounty[walkthrough_cands16$cands_16_scounty_name=="SOUTH DIVISION" & walkthrough_cands16$cands_16_district_name =="MOROTO"] <- "South Division (Moroto)"
   walkthrough_cands16$taac_survey_subcounty[walkthrough_cands16$cands_16_scounty_name=="WESTERN" &  walkthrough_cands16$cands_16_district_name=="SOROTI"] <- "Western Division (Soroti)"
-  
+
 
   x <- anti_join(walkthrough_taac_survey, walkthrough_incumbents, by = "taac_survey_subcounty")
   # only missing midigo
