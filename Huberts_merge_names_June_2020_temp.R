@@ -28,19 +28,22 @@
     # for each match, identify whether that candidate: 
       # is incumbent
       # is incumbent party 
-  
-    # read in taac survey
+############################################################      
+    # read in taac survey and filter to match stata data
+######################################################
     taac_survey <- read_dta("/Users/alyssahuberts/Dropbox/TAAC Scorecard/4 Data Analysis/2_data/1_rawdata/TAAC_final.dta") %>% 
-      select(resp_id, DataSource_Endline, district, subcounty, polit_lc3_vote, polit_lc3_vote_conf, polit_lc3_vote_name, polit_lc5_vote, polit_lc5_vote_conf, polit_lc5_vote_name,polit_lc5_vote_name_u, polit_lc5_vote_full_name, sc_treat, region4, nusf_role,subp_id) %>% 
+      select(resp_id, DataSource_Endline, district, subcounty, polit_lc3_vote, polit_lc3_vote_conf, polit_lc3_vote_name, polit_lc5_vote, polit_lc5_vote_conf, polit_lc5_vote_name,polit_lc5_vote_name_u, polit_lc5_vote_full_name, sc_treat, region4, nusf_role_13,subp_id) %>% 
     filter(DataSource_Endline ==1)
-   taac_survey <-  taac_survey %>% filter(is.na(region4)| region4==0)
-   taac_survey <-  taac_survey %>% filter(!is.na(sc_treat))
-   taac_survey <- taac_survey %>% filter(district!= "Nakapiripirit"& 
-                                           district!= "Napak"&
-                                           district!= "Moroto" & 
-                                           district != "Kotido" & 
-                                           district!= "Kaabong")
-    taac_survey <- taac_survey[taac_survey$nusf_role !="13",]
+    taac_survey <-  taac_survey %>% filter(!is.na(sc_treat))
+    taac_survey$region4 <-ifelse(is.na(taac_survey$region4), 0, taac_survey$region4)
+    taac_survey <- taac_survey[taac_survey$region4!=1,]
+    taac_survey <- taac_survey[!(taac_survey$district == "Napak"),]
+    taac_survey <- taac_survey[!(taac_survey$district == "Nakapiripirit"),]
+    taac_survey <- taac_survey[!(taac_survey$district == "Moroto"),]
+    taac_survey <- taac_survey[!(taac_survey$district == "Kotido"),]
+    taac_survey <- taac_survey[!(taac_survey$district == "Kaabong"),]
+  
+    taac_survey <- taac_survey %>% filter(nusf_role_13 == 0)
     
     ##### MISNAMED SUBCOUNTIES - For a certain subset of respondents, we can't tell what subcounty they're in to match the data:
     # Biiso (Bullisa) could be Biiso or Butiaba
@@ -378,10 +381,7 @@
     cands_16_lc5<- cands_16_lc5 %>% select("candidate_full_name", "party", "lc5_is_incumbent","lc5_is_incumbent_party" ,"lc5_incumbent_ran") %>% 
       rename(polit_lc5_matched_name = candidate_full_name, polit_lc5 =party)
     
-    
-    
 # Now merge the candidacy and incumbency data back to the TAAC survey 
-  taac_survey_test <- left_join(taac_survey, cands_16_lc3, by= "polit_lc3_matched_name")
-  taac_survey_test <- left_join(taac_survey_test, cands_16_lc5, by= "polit_lc5_matched_name") 
+  taac_survey <- left_join(taac_survey, cands_16_lc3, by= "polit_lc3_matched_name")
+  taac_survey<- left_join(taac_survey_test, cands_16_lc5, by= "polit_lc5_matched_name") 
   
-    
