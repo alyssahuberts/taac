@@ -53,10 +53,9 @@
     # Simu/Sisiyi could be either 
     # However, based on which candidate a majority of respondents in the subproject voted for, we can identify them by subproject 
     
-    taac_survey[(taac_survey$subp_id == 160| taac_survey$subp_id == 162|taac_survey$subp_id == 163|
-              taac_survey$subp_id == 164| taac_survey$subp_id == 166|taac_survey$subp_id == 167| 
-                taac_survey$subp_id == 168| taac_survey$subp_id == 169|taac_survey$subp_id == 170|taac_survey$subp_id == 171), "subcounty"] <- "Rigbo"
-    taac_survey[(taac_survey$subp_id == 165), "subcounty"] <- "Ewanga"
+    taac_survey[(taac_survey$subp_id == 160| taac_survey$subp_id == 166|taac_survey$subp_id == 167| 
+                taac_survey$subp_id == 168), "subcounty"] <- "Rigbo"
+    taac_survey[(taac_survey$subp_id == 162|taac_survey$subp_id ==163|taac_survey$subp_id ==164|taac_survey$subp_id ==165|taac_survey$subp_id == 169|taac_survey$subp_id == 170| taac_survey$subp_id == 171), "subcounty"] <- "Ewanga"
     taac_survey[(taac_survey$subp_id == 262|taac_survey$subp_id == 263| taac_survey$subp_id == 264|taac_survey$subp_id == 265), "subcounty"] <- "Namisuni"
     taac_survey[(taac_survey$subp_id == 266|taac_survey$subp_id == 267| taac_survey$subp_id == 268|taac_survey$subp_id == 269), "subcounty"] <- "Simu"
     taac_survey[(taac_survey$subp_id == 270|taac_survey$subp_id == 271| taac_survey$subp_id == 272), "subcounty"] <- "Biiso"
@@ -102,11 +101,6 @@
       select(scounty_name,scid, party, candidate_full_name, districtid,district_name,pos) %>% 
       rename(cands_16_scounty_name = scounty_name, cands_16_scid = scid, cands_16_district_id = districtid, cands_16_district_name =district_name, position = pos) %>% 
       unique()
-    misnamed_cands <- cands_16 %>% filter(cands_16_scounty_name == "ABER"| cands_16_scounty_name == "KAMDINI"|
-                                            cands_16_scounty_name == "RIGBO"| cands_16_scounty_name == "EWANGA"|
-                                            cands_16_scounty_name == "BIISO"| cands_16_scounty_name == "BUTIABA"|
-                                            cands_16_scounty_name == "NAMISUNI"| cands_16_scounty_name == "BULEGENI"|
-                                            cands_16_scounty_name == "SIMU"| cands_16_scounty_name == "SISIYI")
     # write a  function to, for each observation in the survey, either pick the
     # best match within the subcounty/district, or say we can't identify the candidate
     # named
@@ -125,7 +119,7 @@
         targets_lc3 <- tibble(candidate_full_name = NA)
         }
       matches <- tibble(resp_id = resp_id)
-      matches$polit_lc3_vote_name <- taac_survey[taac_survey$resp_id == resp_id, "polit_lc3_vote_name"] %>% pull()
+      matches$polit_lc3_vote_name <- taac_survey[taac_survey$resp_id == resp_id, "polit_lc3_vote_name"] %>%  pull()
       # jw 
         matches$m_jw_3 <- targets_lc3[amatch(matches$polit_lc3_vote_name, targets_lc3$candidate_full_name, method = "jw", maxDist = 1),"candidate_full_name"]
         matches$d_jw_3 <- stringdist(matches$polit_lc3_vote_name, matches$m_jw_3, method = "jw")
@@ -184,14 +178,14 @@
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "sizza moses"|all_matches$polit_lc3_vote_name =="sizza"|all_matches$polit_lc3_vote_name =="ceaser moses"|all_matches$polit_lc3_vote_name =="ceaser"), "siisa moses nasilu", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "silver"), "ukadha muhammad silver", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "oyuru charles"), "oyuru geoffrey girang", all_matches$match_id_3)
-    all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "otim peter"|all_matches$polit_lc3_vote_name == "otim francis"|all_matches$polit_lc3_vote_name =="otim bitek"|all_matches$polit_lc3_vote_name =="otim"|all_matches$polit_lc3_vote_name =="bitek otim"|all_matches$polit_lc3_vote_name =="betek"), "okot p. bitek ben", all_matches$match_id_3)
+    all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "otim peter"|all_matches$polit_lc3_vote_name =="otim bitek"|all_matches$polit_lc3_vote_name =="otim"|all_matches$polit_lc3_vote_name =="bitek otim"|all_matches$polit_lc3_vote_name =="betek"), "okot p. bitek ben", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "omairo micheal"|all_matches$polit_lc3_vote_name == "omairo"), "olupot omairo john michael", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "okello cirlo"), "maja cirlo okelu wange", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "lutinga"|all_matches$polit_lc3_vote_name =="lutinang."| all_matches$polit_lc3_vote_name =="ben okot."), "okot john ben lutinga", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "labeja dyel"), "labeja john bosco", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "kwigķiriza"), "kwikiriza geofrey", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "kilegule"), "kiragule isihaka", all_matches$match_id_3)
-    all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "kilama ogun"|all_matches$polit_lc3_vote_name == "kilama"), "wodacholi kilama fearless", all_matches$match_id_3)
+    all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "kilama ogun"), "wodacholi kilama fearless", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "kefa asia"), "ekaforu kefa", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "james wafwana"), "wafana james kadooli", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "iriso okoyo"| all_matches$polit_lc3_vote_name == "iriso"), "okoyo yosamu", all_matches$match_id_3)
@@ -206,7 +200,7 @@
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "cleophas"), "bigiirwa cleophus", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "bosco odama"|all_matches$polit_lc3_vote_name == "bosco"), "odama john", all_matches$match_id_3)
     all_matches$match_id_3 <- ifelse(all_matches$polit_lc3_vote_name == "bony odongo", "odongo boniface", all_matches$match_id_3)
-     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "asia akodo"|all_matches$polit_lc3_vote_name=="asea geofrey"|all_matches$polit_lc3_vote_name == "akoro"|all_matches$polit_lc3_vote_name == "akolo"|all_matches$polit_lc3_vote_name == "akodo" ), "odongo boniface", all_matches$match_id_3)
+     all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "asia akodo"|all_matches$polit_lc3_vote_name=="asea geofrey"|all_matches$polit_lc3_vote_name == "akoro"|all_matches$polit_lc3_vote_name == "akolo"|all_matches$polit_lc3_vote_name == "akodo" ), "asiason godfrey akodo", all_matches$match_id_3)
      all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "ali okello"), "okello richard alii", all_matches$match_id_3)
      all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "abubakari peter"), "baiga abubakar", all_matches$match_id_3)
      all_matches$match_id_3 <- ifelse((all_matches$polit_lc3_vote_name == "samuel ndaa"), "ndaa sam", all_matches$match_id_3)
@@ -249,7 +243,7 @@
      all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "johnson okello"|all_matches$polit_lc5_vote_name == "johnson okello."|all_matches$polit_lc5_vote_name == "okello"), "okello denish johnson", all_matches$match_id_5)
      all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "okurut"), "okurut john michael", all_matches$match_id_5)
      all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "charles ntirehoki"), "ntairehoki charles amooti", all_matches$match_id_5)
-     all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "apollo jaramogi"|all_matches$polit_lc5_vote_name == "apollo jaramongi"| all_matches$polit_lc5_vote_name =="jaramongi"| all_matches$polit_lc5_vote_name == "apollo jaramogi"|all_matches$polit_lc5_vote_name == "jaramogi" |all_matches$polit_lc5_vote_nam = "apollo jaramogi"), "jaramogi apollo ollo", all_matches$match_id_5)
+     all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "apollo jaramogi"|all_matches$polit_lc5_vote_name == "apollo jaramongi"| all_matches$polit_lc5_vote_name =="jaramongi"| all_matches$polit_lc5_vote_name == "apollo jaramogi"|all_matches$polit_lc5_vote_name == "jaramogi" |all_matches$polit_lc5_vote_name == "apollo jaramogi"), "jaramogi apollo ollo", all_matches$match_id_5)
      all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "hassan nynya"), "nginya hassan said", all_matches$match_id_5)
      all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "david ebong"| all_matches$polit_lc5_vote_name == "david ebony bong"), "ebong david", all_matches$match_id_5)
      all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "mboizi"|all_matches$polit_lc5_vote_name == "athar mboizi"|all_matches$polit_lc5_vote_name == "mboizi kezekia"|all_matches$polit_lc5_vote_name == "bweaisi wako"|all_matches$polit_lc5_vote_name == "mbwezi"| all_matches$polit_lc5_vote_name =="wako mboizi"), "mboizi arthur waako", all_matches$match_id_5)
@@ -298,11 +292,6 @@
      all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "otobi godfrey orac"|all_matches$polit_lc5_vote_name == "otopi"|all_matches$polit_lc5_vote_name =="otopi geoffrey"), " orach godfrey otobi", all_matches$match_id_5)
      all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "paul kapchemyeko"), "kapchemeiko paul machinjach", all_matches$match_id_5)
 
-     all_matches$matched_lc3 <- ifelse(is.na(all_matches$match_id_3),0,1)
-     all_matches$matched_lc5 <- ifelse(is.na(all_matches$match_id_5),0,1)
-     
-     all_matches <-left_join(all_matches, taac_survey[,c("resp_id","subcounty", "polit_lc3_gave_name", "polit_lc5_gave_name")], by = "resp_id")
-     
     # Merge responses back onto TAAC 
     taac_survey <- left_join(taac_survey, all_matches[c("resp_id", "match_id_3", "match_id_5")], by ="resp_id")
     taac_survey[taac_survey$polit_lc3_gave_name==0,]$match_id_3<-NA
@@ -327,10 +316,12 @@
     winners_2011_LC3$scid <- paste(winners_2011_LC3$district_id,winners_2011_LC3$ea_id, winners_2011_LC3$scounty_id, sep = "-")
     winners_2011_LC3 <-winners_2011_LC3 %>% 
       rename(incumbents_scid = scid, incumbents_scounty = scounty, incumbents_district_id = district_id, incumbents_district = district, incumbent_lc3_party = party)
-    winners_2011_LC3$incumbent_lc3_name = tolower(paste( winners_2011_LC3$other_name,winners_2011_LC3$surname, sep = " "))
-
+    winners_2011_LC3$incumbent_lc3_name = tolower(paste(winners_2011_LC3$surname,  winners_2011_LC3$other_name, sep = " "))
+    winners_2011_LC3$incumbent_lc3_name <- ifelse(winners_2011_LC3$incumbent_lc3_name == "asiason godfrey", "asiason godfrey akodo", winners_2011_LC3$incumbent_lc3_name)
+    
     winners_2011_LC3 <- winners_2011_LC3 %>% select(incumbents_district, incumbents_scid,incumbents_scounty, incumbents_district,
                                                     incumbents_district_id, incumbent_lc3_name, incumbent_lc3_party)
+    
     # read in lc5
     winners_2011_LC5 <- read.csv("election/2011_District_Chairperson_winners.csv", stringsAsFactors = FALSE) %>% clean_names()
     winners_2011_LC5$district_id <- str_pad(as.character(winners_2011_LC5$district_id),3, side = "left", pad = "0")
@@ -362,7 +353,7 @@
                                                  stringdist(cands_16_lc3$candidate_full_name, cands_16_lc3$incumbent_lc3_name, method = "jw") <.3),1,0)
     # lc3 is incumbent party 
     cands_16_lc3$lc3_is_incumbent_party <- ifelse(cands_16_lc3$party == cands_16_lc3$incumbent_lc3_party,1,0)
-    cands_16_lc3 <- cands_16_lc3 %>% select("candidate_full_name", "party", "lc3_is_incumbent","lc3_is_incumbent_party" ,"lc3_incumbent_ran") %>% 
+    cands_16_lc3 <- cands_16_lc3 %>% select("cands_16_scid","cands_16_scounty_name", "candidate_full_name", "party", "lc3_is_incumbent","lc3_is_incumbent_party" ,"lc3_incumbent_ran") %>% 
     rename(polit_lc3_matched_name = candidate_full_name, polit_lc3_party = party)
     
     # lc 5
@@ -382,6 +373,8 @@
       rename(polit_lc5_matched_name = candidate_full_name, polit_lc5 =party)
     
 # Now merge the candidacy and incumbency data back to the TAAC survey 
-  taac_survey <- left_join(taac_survey, cands_16_lc3, by= "polit_lc3_matched_name")
-  taac_survey<- left_join(taac_survey_test, cands_16_lc5, by= "polit_lc5_matched_name") 
+  taac_survey <- left_join(taac_survey, cands_16_lc3, by= c("polit_lc3_matched_name", "cands_16_scid", "cands_16_scounty_name"))
+  taac_survey <- left_join(taac_survey, cands_16_lc5, by= "polit_lc5_matched_name") 
   
+taac_survey$missing_incumbent_data = ifelse(is.na(taac_survey$lc5_is_incumbent),1,0)
+View(taac_survey[taac_survey$polit_lc3_matched ==1 & taac_survey$missing_incumbent_data ==1,])
