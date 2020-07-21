@@ -48,8 +48,31 @@
     # Rigbo (Arua) could be Rigbo or Ewanga 
     # Namisuni/Bulegeni  could be either
     # Simu/Sisiyi could be either 
-    # drop them for now, but we need to fix this
+    # However, based on which candidate a majority of respondents in the subproject voted for, we can identify them by subproject 
     
+    taac_survey[(taac_survey$subp_id == 160| taac_survey$subp_id == 162|taac_survey$subp_id == 163|
+              taac_survey$subp_id == 164| taac_survey$subp_id == 166|taac_survey$subp_id == 167| 
+                taac_survey$subp_id == 168| taac_survey$subp_id == 169|taac_survey$subp_id == 170|taac_survey$subp_id == 171), "subcounty"] <- "Rigbo"
+    taac_survey[(taac_survey$subp_id == 165), "subcounty"] <- "Ewanga"
+    taac_survey[(taac_survey$subp_id == 262|taac_survey$subp_id == 263| taac_survey$subp_id == 264|taac_survey$subp_id == 265), "subcounty"] <- "Namisuni"
+    taac_survey[(taac_survey$subp_id == 266|taac_survey$subp_id == 267| taac_survey$subp_id == 268|taac_survey$subp_id == 269), "subcounty"] <- "Simu"
+    taac_survey[(taac_survey$subp_id == 270|taac_survey$subp_id == 271| taac_survey$subp_id == 272), "subcounty"] <- "Biiso"
+    taac_survey[(taac_survey$subp_id == 273|taac_survey$subp_id == 274| taac_survey$subp_id == 275|taac_survey$subp_id == 276|
+                   taac_survey$subp_id == 277|taac_survey$subp_id == 278| taac_survey$subp_id == 279|
+                   taac_survey$subp_id == 280|taac_survey$subp_id == 281| taac_survey$subp_id == 282|
+                   taac_survey$subp_id == 283|taac_survey$subp_id == 284| taac_survey$subp_id == 285|
+                   taac_survey$subp_id == 286|taac_survey$subp_id == 287| 
+                   taac_survey$subp_id == 290|taac_survey$subp_id == 291| taac_survey$subp_id == 292|
+                   taac_survey$subp_id == 293|taac_survey$subp_id == 294), "subcounty"] <- "Butiaba"
+    taac_survey[(taac_survey$subp_id == 933|taac_survey$subp_id == 934| taac_survey$subp_id == 935|
+                   taac_survey$subp_id == 936|taac_survey$subp_id == 948| taac_survey$subp_id == 949|taac_survey$subp_id ==951), "subcounty"] <- "Aber"
+    taac_survey[(taac_survey$subp_id == 937|taac_survey$subp_id == 938| taac_survey$subp_id == 940|
+                   taac_survey$subp_id == 941|taac_survey$subp_id == 942| taac_survey$subp_id == 944|taac_survey$subp_id ==945|
+                   taac_survey$subp_id == 946| taac_survey$subp_id == 947), "subcounty"] <- "Kamdini"
+    taac_survey[(taac_survey$subp_id == 296|taac_survey$subp_id == 297| taac_survey$subp_id == 298), "subcounty"] <- "Kihungya"
+    
+    misnamed <- taac_survey %>% filter(subcounty == "Biiso"| subcounty == "Aber" | subcounty== "Rigbo" | subcounty== "Simu/Sisiyi" | subcounty== "Namisuni/ Bulegeni")
+    View(misnamed[,c("subcounty", "subp_id", "polit_lc3_vote_name")])
     taac_survey <- taac_survey %>% filter(subcounty != "Biiso"& subcounty != "Aber" & subcounty!= "Rigbo" & subcounty!= "Simu/Sisiyi" & subcounty!= "Namisuni/ Bulegeni")
     
     # load in the crosswalk so that we know we have the identifier for each subcounty across the three relevant datasets
@@ -60,8 +83,15 @@
     taac_survey$polit_lc3_gave_name <- ifelse((taac_survey$polit_lc3_vote_name != ""& !is.na(taac_survey$polit_lc3_vote_name)),1,0)
     taac_survey$polit_lc5_gave_name <- ifelse((taac_survey$polit_lc5_vote_name != ""& !is.na(taac_survey$polit_lc5_vote_name)),1,0)
     
+    # This allows us to identify the subcounty for all except the following subprojects:
+      # 165 - Sam Adyebo is Rigbo but Kommaa is Ewanga
+      # 288, 290 - malitabu mugenyi is butiaba, we can't identify this mulimba seremosi, but there are several seremoth's in biiso
+      # 943- can't identify DILA or james ogwal
+      # 950 - olweny bosco is aber because obua is kamdini
+    
     taac_survey$polit_lc3_vote_name <- tolower(taac_survey$polit_lc3_vote_name)
     taac_survey$polit_lc5_vote_name <- tolower(taac_survey$polit_lc5_vote_name)
+    
     
     # Load in 2016 candidates 
     cands_16 <- read.dta13("election/2016_LGCands.dta", nonint.factors = TRUE) %>%
@@ -70,8 +100,11 @@
       select(scounty_name,scid, party, candidate_full_name, districtid,district_name,pos) %>% 
       rename(cands_16_scounty_name = scounty_name, cands_16_scid = scid, cands_16_district_id = districtid, cands_16_district_name =district_name, position = pos) %>% 
       unique()
-
-   
+    misnamed_cands <- cands_16 %>% filter(cands_16_scounty_name == "ABER"| cands_16_scounty_name == "KAMDINI"|
+                                            cands_16_scounty_name == "RIGBO"| cands_16_scounty_name == "EWANGA"|
+                                            cands_16_scounty_name == "BIISO"| cands_16_scounty_name == "BUTIABA"|
+                                            cands_16_scounty_name == "NAMISUNI"| cands_16_scounty_name == "BULEGENI"|
+                                            cands_16_scounty_name == "SIMU"| cands_16_scounty_name == "SISIYI")
     # write a  function to, for each observation in the survey, either pick the
     # best match within the subcounty/district, or say we can't identify the candidate
     # named
