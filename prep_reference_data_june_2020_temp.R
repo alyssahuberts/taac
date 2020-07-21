@@ -30,6 +30,10 @@ setwd("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/
   walkthrough_taac_survey <- taac_survey[,c("subcounty", "district")]
   walkthrough_taac_survey <- unique(walkthrough_taac_survey) %>% rename(taac_survey_district = district, taac_survey_subcounty = subcounty)
   
+  # these are subcounties which were grouped with a different subcounty in the taac survey
+  extras <- tibble(taac_survey_subcounty = c("Butiaba", "Kamdini", "Ewanga", "Kihungya", "Namisuni", "Simu"),taac_survey_district = c("Bullisa", "Oyam","Arua","Bullisa", "Bulambuli","Bulambuli"))
+  walkthrough_taac_survey <- rbind(walkthrough_taac_survey, extras)
+  
   # now we want the 2011 incumbents
   winners_2011_LC3 <- read.csv("election/2011_SC_Chairperson_winners.csv", stringsAsFactors = FALSE, header = TRUE) %>% 
     clean_names %>% 
@@ -43,6 +47,8 @@ setwd("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/
   rename(incumbents_scid = scid, incumbents_scounty = scounty, incumbents_district_id = district_id, incumbents_district = district)
   # walkthrough needs a column which mimics the survey's subcounty 
   # first step is just changing case
+  
+  
   walkthrough_incumbents$taac_survey_subcounty <- str_to_title(walkthrough_incumbents$incumbents_scounty)
   # now correct discrepencies. Note that we only need to correct the
   # discrepencies for subcounties in the survey (the others don't matter)
@@ -54,8 +60,8 @@ setwd("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="BULUGANYA"] <- "Buluganya"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="BUNYAFWA"] <- "Bunyafa"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="CAWENTE"] <- "Chawente"
-  walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="TORORO" & walkthrough_incumbents$incumbents_scid == 039-214-001] <- "Eastern Division (Tororo)"
-  walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="TORORO" & walkthrough_incumbents$incumbents_scid == 039-214-002] <- "Western Division (Tororo)"
+  walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="TORORO" & walkthrough_incumbents$incumbents_scid == "039-214-001"] <- "Eastern Division (Tororo)"
+  walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="TORORO" & walkthrough_incumbents$incumbents_scid == "039-214-002"] <- "Western Division (Tororo)"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="KAPCHORWA"] <- "Kapchorwa TC"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="KARENGA(NAPOR"] <- "Karenga"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="KOCH-GOMA"] <- "Kochgoma"
@@ -81,9 +87,6 @@ setwd("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="SOUTH DIVISION" & walkthrough_incumbents$incumbents_district =="MOROTO"] <- "South Division (Moroto)"
   walkthrough_incumbents$taac_survey_subcounty[walkthrough_incumbents$incumbents_scounty=="WESTERN" & walkthrough_incumbents$incumbents_district=="SOROTI"] <- "Western Division (Soroti)"
   # can match everything except Palabek Ogili and Midigo
-  
-  
-  
   
   # now we want the 2016 candidates
   cands_16 <- read.dta13("election/2016_LGCands.dta", nonint.factors = TRUE)

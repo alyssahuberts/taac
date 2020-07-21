@@ -71,10 +71,7 @@
                    taac_survey$subp_id == 946| taac_survey$subp_id == 947), "subcounty"] <- "Kamdini"
     taac_survey[(taac_survey$subp_id == 296|taac_survey$subp_id == 297| taac_survey$subp_id == 298), "subcounty"] <- "Kihungya"
     
-    misnamed <- taac_survey %>% filter(subcounty == "Biiso"| subcounty == "Aber" | subcounty== "Rigbo" | subcounty== "Simu/Sisiyi" | subcounty== "Namisuni/ Bulegeni")
-    View(misnamed[,c("subcounty", "subp_id", "polit_lc3_vote_name")])
-    taac_survey <- taac_survey %>% filter(subcounty != "Biiso"& subcounty != "Aber" & subcounty!= "Rigbo" & subcounty!= "Simu/Sisiyi" & subcounty!= "Namisuni/ Bulegeni")
-    
+  
     # load in the crosswalk so that we know we have the identifier for each subcounty across the three relevant datasets
     load("/Users/alyssahuberts/Dropbox/TAAC Scorecard/5 Merge election data/1_data/walkthrough.Rdata")
     
@@ -88,6 +85,8 @@
       # 288, 290 - malitabu mugenyi is butiaba, we can't identify this mulimba seremosi, but there are several seremoth's in biiso
       # 943- can't identify DILA or james ogwal
       # 950 - olweny bosco is aber because obua is kamdini
+    # for now, change those to "unidentified"
+    #taac_survey[(taac_survey$subp_id == 165| taac_survey$subp_id == 288| taac_survey$subp_id == 290| taac_survey$subp_id == 943| taac_survey$subp_id == 943|taac_survey$subp_id == 950), "subcounty"] <-"unidentified"
     
     taac_survey$polit_lc3_vote_name <- tolower(taac_survey$polit_lc3_vote_name)
     taac_survey$polit_lc5_vote_name <- tolower(taac_survey$polit_lc5_vote_name)
@@ -136,6 +135,7 @@
       # jaccard
         matches$m_jc_3 <- targets_lc3[amatch(matches$polit_lc3_vote_name, targets_lc3$candidate_full_name, method = "jaccard",maxDist = 1),"candidate_full_name"]
         matches$d_jc_3 <- stringdist(matches$polit_lc3_vote_name, matches$m_jc_3, method = "jaccard")
+        
         matches$all_options_3 <- paste(targets_lc3$candidate_full_name, collapse = ", ")
       
       # lc5
@@ -146,19 +146,23 @@
         }
         matches$polit_lc5_vote_name <- taac_survey[taac_survey$resp_id == resp_id, "polit_lc5_vote_name"] %>% pull()
         # jw 
-        matches$m_jw_5 <- targets_lc5[amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "jw", maxDist = 1),"candidate_full_name"]
+        jw <- amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "jw", maxDist = 1)
+        matches$m_jw_5 <- ifelse(!is.na(jw), targets_lc5[amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "jw", maxDist = 1),"candidate_full_name"], NA)
         matches$d_jw_5 <- stringdist(matches$polit_lc5_vote_name, matches$m_jw_5, method = "jw")
         # dl 
-        matches$m_dl_5 <- targets_lc5[amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "dl",maxDist = 20),"candidate_full_name"]
+        dl <- amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "dl",maxDist = 20)
+        matches$m_dl_5 <- ifelse(!is.na(dl), targets_lc5[,"candidate_full_name"],NA)
         matches$d_dl_5 <- stringdist(matches$polit_lc5_vote_name, matches$m_dl_5, method = "dl")
         # lcs 
-        matches$m_lcs_5 <- targets_lc5[amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "lcs",maxDist = 20),"candidate_full_name"]
+        lcs <- amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "lcs",maxDist = 20)
+        matches$m_lcs_5 <- ifelse(!is.na(lcs),targets_lc5[,"candidate_full_name"], NA)
         matches$d_lcs_5 <- stringdist(matches$polit_lc5_vote_name, matches$m_lcs_5, method = "lcs")
         # jaccard
-        matches$m_jc_5 <- targets_lc5[amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "jaccard",maxDist = 1),"candidate_full_name"]
+        jc <- amatch(matches$polit_lc5_vote_name, targets_lc5$candidate_full_name, method = "jaccard",maxDist = 1)
+        matches$m_jc_5 <- ifelse(!is.na(jc),targets_lc5[jc,"candidate_full_name"],NA)
         matches$d_jc_5 <- stringdist(matches$polit_lc5_vote_name, matches$m_lcs_5, method = "jaccard")
         matches$all_options_5 <- paste(targets_lc5$candidate_full_name, collapse = ", ")
-        all_matches <<- rbind(all_matches,matches)
+        all_matches <<- bind_rows(all_matches,matches)
         }
     lapply(taac_survey$resp_id,check_match)
     
@@ -168,7 +172,7 @@
     all_matches$match_id_3 <- ifelse(all_matches$polit_lc3_vote_name != ""& all_matches$d_jw_3 <.3, all_matches$m_jw_3,NA) 
     all_matches$match_id_3 <- ifelse(is.na(all_matches$match_id_3) & all_matches$polit_lc3_vote_name != ""& all_matches$d_lcs_3 <11, all_matches$m_dl_3,all_matches$match_id_3) 
     all_matches$match_id_3 <- ifelse(all_matches$polit_lc3_vote_name != ""& is.na(all_matches$match_id_3) & all_matches$d_dl_3 <6, all_matches$m_dl_3,all_matches$match_id_3) 
-    all_matches$match_id_3 <- ifelse(all_matches$polit_lc3_vote_name != ""& is.na(all_matches$match_id_3) & all_matches$d_jc_3 <.3, all_matches$m_jc_3,all_matches$match_id_3) 
+    all_matches$match_id_3 <- ifelse(all_matches$polit_lc3_vote_name != ""& is.na(all_matches$match_id_3) & all_matches$d_jw_3 <.3, all_matches$m_jw_3,all_matches$match_id_3) 
     all_matches$match_id_3 <- ifelse(all_matches$polit_lc3_vote_name != ""& is.na(all_matches$match_id_3) & all_matches$d_jc_3 <.3, all_matches$m_jc_3,all_matches$match_id_3) 
     
   
@@ -236,7 +240,7 @@
      all_matches$match_id_5 <- ifelse(all_matches$polit_lc5_vote_name != ""& all_matches$d_jw_5 <.3, all_matches$m_jw_5,NA) 
      all_matches$match_id_5 <- ifelse(is.na(all_matches$match_id_5) & all_matches$polit_lc5_vote_name != ""& all_matches$d_lcs_5 <11, all_matches$m_dl_5,all_matches$match_id_5) 
      all_matches$match_id_5 <- ifelse(all_matches$polit_lc5_vote_name != ""& is.na(all_matches$match_id_5) & all_matches$d_dl_5 <6, all_matches$m_dl_5,all_matches$match_id_5) 
-     all_matches$match_id_5 <- ifelse(all_matches$polit_lc5_vote_name != ""& is.na(all_matches$match_id_5) & all_matches$d_jc_5 <.3, all_matches$m_jc_5,all_matches$match_id_5) 
+     all_matches$match_id_5 <- ifelse(all_matches$polit_lc5_vote_name != ""& is.na(all_matches$match_id_5) & all_matches$d_jw_5 <.3, all_matches$m_jw_5,all_matches$match_id_5) 
      all_matches$match_id_5 <- ifelse(all_matches$polit_lc5_vote_name != ""& is.na(all_matches$match_id_5) & all_matches$d_jc_5 <.3, all_matches$m_jc_5,all_matches$match_id_5) 
      
      all_matches$match_id_5 <- ifelse((all_matches$polit_lc5_vote_name == "johnson okello"|all_matches$polit_lc5_vote_name == "johnson okello."|all_matches$polit_lc5_vote_name == "okello"), "okello denish johnson", all_matches$match_id_5)
@@ -294,19 +298,90 @@
      all_matches$matched_lc3 <- ifelse(is.na(all_matches$match_id_3),0,1)
      all_matches$matched_lc5 <- ifelse(is.na(all_matches$match_id_5),0,1)
      
-     all_matches <-left_join(all_matches, taac_survey[,c("resp_id", "polit_lc3_gave_name", "polit_lc5_gave_name")], by = "resp_id")
+     all_matches <-left_join(all_matches, taac_survey[,c("resp_id","subcounty", "polit_lc3_gave_name", "polit_lc5_gave_name")], by = "resp_id")
      
     # Merge responses back onto TAAC 
     taac_survey <- left_join(taac_survey, all_matches[c("resp_id", "match_id_3", "match_id_5")], by ="resp_id")
     taac_survey[taac_survey$polit_lc3_gave_name==0,]$match_id_3<-NA
     taac_survey[taac_survey$polit_lc5_gave_name==0,]$match_id_5<-NA
+    taac_survey$polit_lc3_matched <-ifelse(!is.na(taac_survey$match_id_3),1,0)
+    taac_survey$polit_lc5_matched <-ifelse(!is.na(taac_survey$match_id_5),1,0)
     
-    taac_survey$polit_lc3_matched_name <-ifelse(!is.na(taac_survey$match_id_3),1,0)
-    taac_survey$polit_lc5_matched_name <-ifelse(!is.na(taac_survey$match_id_5),1,0)
-    
+    taac_survey <- taac_survey %>% rename(polit_lc3_matched_name = match_id_3,
+                                          polit_lc5_matched_name = match_id_5)
 
+############################   
+# Link candidates to incumbency data
+############################     
+    
+    # read in lc3
+    winners_2011_LC3 <- read.csv("election/2011_SC_Chairperson_winners.csv", stringsAsFactors = FALSE, header = TRUE) %>% 
+    clean_names %>% 
+    rename(district_id=x,  ea = x_1, scounty_id = x_2)
+    winners_2011_LC3$district_id <- str_pad(winners_2011_LC3$district_id,3, side = "left",pad = "0")
+    winners_2011_LC3$ea_id <- str_pad(winners_2011_LC3$ea,3, side = "left",pad = "0")
+    winners_2011_LC3$scounty_id <- str_pad(winners_2011_LC3$scounty_id,3, side = "left",pad = "0")
+    winners_2011_LC3$scid <- paste(winners_2011_LC3$district_id,winners_2011_LC3$ea_id, winners_2011_LC3$scounty_id, sep = "-")
+    winners_2011_LC3 <-winners_2011_LC3 %>% 
+      rename(incumbents_scid = scid, incumbents_scounty = scounty, incumbents_district_id = district_id, incumbents_district = district, incumbent_lc3_party = party)
+    winners_2011_LC3$incumbent_lc3_name = tolower(paste( winners_2011_LC3$other_name,winners_2011_LC3$surname, sep = " "))
+
+    winners_2011_LC3 <- winners_2011_LC3 %>% select(incumbents_district, incumbents_scid,incumbents_scounty, incumbents_district,
+                                                    incumbents_district_id, incumbent_lc3_name, incumbent_lc3_party)
+    # read in lc5
+    winners_2011_LC5 <- read.csv("election/2011_District_Chairperson_winners.csv", stringsAsFactors = FALSE) %>% clean_names()
+    winners_2011_LC5$district_id <- str_pad(as.character(winners_2011_LC5$district_id),3, side = "left", pad = "0")
+    winners_2011_LC5 <- winners_2011_LC5 %>% rename(incumbents_district_id = district_id, 
+                                                    incumbents_district = district, 
+                                                    incumbent_lc5_name = name,
+                                                    incumbent_lc5_party = party )
+    winners_2011_LC5$incumbent_lc5_name <- tolower(winners_2011_LC5$incumbent_lc5_name)
+    incumbents <- left_join(winners_2011_LC3, winners_2011_LC5, by = c("incumbents_district_id", "incumbents_district"))
+    
+    # Match this incumbency data to candidacy data to create the variables is_incumbent, is_incumbent_party,  incumbent_ran,and incumbent_party_ran
+    incumbents <- left_join(incumbents, walkthrough, by = c("incumbents_scid","incumbents_scounty", "incumbents_district_id", "incumbents_district" ))
+    cands_16_lc3 <- left_join(cands_16[cands_16$position == "LC3 Chairperson",], incumbents, by = c("cands_16_scounty_name", "cands_16_scid", "cands_16_district_id", "cands_16_district_name"))
+    # lc3 is incumbent
+    cands_16_lc3$lc3_is_incumbent <- ifelse(  (stringdist(cands_16_lc3$candidate_full_name, cands_16_lc3$incumbent_lc3_name, method = "dl") <6|
+                                           stringdist(cands_16_lc3$candidate_full_name, cands_16_lc3$incumbent_lc3_name, method = "lcs") <6|
+                                           stringdist(cands_16_lc3$candidate_full_name, cands_16_lc3$incumbent_lc3_name, method = "jaccard") <.3|
+                                           stringdist(cands_16_lc3$candidate_full_name, cands_16_lc3$incumbent_lc3_name, method = "jw") <.3),1,0)
+    # manually correct the four districts where multiple candidates meet this criteria
+    cands_16_lc3[(cands_16_lc3$candidate_full_name == "onyum patrick okwang"|
+               cands_16_lc3$candidate_full_name == "gimei martin"|
+               cands_16_lc3$candidate_full_name == "nangoyan peter lolimo"|
+                cands_16_lc3$candidate_full_name == "odengeria albert okoboi" ),]$lc3_is_incumbent <-0
+    #lc3  incumbent ran
+    cands_16_lc3 <- cands_16_lc3 %>% group_by(cands_16_scid) %>% mutate(lc3_incumbent_ran = max(lc3_is_incumbent)) %>% ungroup()
+    cands_16_lc3$lc3_is_incumbent <- ifelse(  (stringdist(cands_16_lc3$candidate_full_name, cands_16_lc3$incumbent_lc3_name, method = "dl") <6|
+                                                 stringdist(cands_16_lc3$candidate_full_name, cands_16_lc3$incumbent_lc3_name, method = "lcs") <6|
+                                                 stringdist(cands_16_lc3$candidate_full_name, cands_16_lc3$incumbent_lc3_name, method = "jaccard") <.3|
+                                                 stringdist(cands_16_lc3$candidate_full_name, cands_16_lc3$incumbent_lc3_name, method = "jw") <.3),1,0)
+    # lc3 is incumbent party 
+    cands_16_lc3$lc3_is_incumbent_party <- ifelse(cands_16_lc3$party == cands_16_lc3$incumbent_lc3_party,1,0)
+    cands_16_lc3 <- cands_16_lc3 %>% select("candidate_full_name", "party", "lc3_is_incumbent","lc3_is_incumbent_party" ,"lc3_incumbent_ran") %>% 
+    rename(polit_lc3_matched_name = candidate_full_name, polit_lc3_party = party)
+    
+    # lc 5
+    cands_16_lc5 <- cands_16[cands_16$position == "LC5 Chairperson",]
+    incumbents_lc5 <- incumbents %>% group_by(cands_16_district_id, incumbent_lc5_name, incumbent_lc5_party) %>% tally()
+    cands_16_lc5 <- left_join(cands_16_lc5, incumbents_lc5[,c("cands_16_district_id", "incumbent_lc5_name", "incumbent_lc5_party")], by = "cands_16_district_id")
+    # lc5 is incumbent
+    cands_16_lc5$lc5_is_incumbent <- ifelse(stringdist(cands_16_lc5$candidate_full_name, cands_16_lc5$incumbent_lc5_name, method = "dl") <6|
+                                                                                     stringdist(cands_16_lc5$candidate_full_name, cands_16_lc5$incumbent_lc5_name, method = "lcs") <6|
+                                                                                     stringdist(cands_16_lc5$candidate_full_name, cands_16_lc5$incumbent_lc5_name, method = "jaccard") <.3|
+                                                                                     stringdist(cands_16_lc5$candidate_full_name, cands_16_lc5$incumbent_lc5_name, method = "jw") <.3,1,0)
+    # lc5 incumbent ran
+    cands_16_lc5<- cands_16_lc5 %>% group_by(cands_16_scid) %>% mutate(lc5_incumbent_ran = max(lc5_is_incumbent)) %>% ungroup()
+    # lc5 is incumbent party 
+    cands_16_lc5$lc5_is_incumbent_party <- ifelse(cands_16_lc5$party == cands_16_lc5$incumbent_lc5_party,1,0)
+    cands_16_lc5<- cands_16_lc5 %>% select("candidate_full_name", "party", "lc5_is_incumbent","lc5_is_incumbent_party" ,"lc5_incumbent_ran") %>% 
+      rename(polit_lc5_matched_name = candidate_full_name, polit_lc5 =party)
+    
+    
+    
+# Now merge the candidacy and incumbency data back to the TAAC survey 
+  taac_survey_test <- left_join(taac_survey, cands_16_lc3, by= "polit_lc3_matched_name")
+  taac_survey_test <- left_join(taac_survey_test, cands_16_lc5, by= "polit_lc5_matched_name") 
   
     
-    
-
-  
